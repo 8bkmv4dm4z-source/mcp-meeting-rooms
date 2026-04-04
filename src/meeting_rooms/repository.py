@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
-from datetime import date, time
+from datetime import date, time, datetime
 
 from meeting_rooms.models import (
     Booking,
@@ -142,3 +142,107 @@ class Repository:
         )
         self.conn.commit()
         return cur.rowcount > 0
+
+    def search_available_rooms(
+        self,
+        date_: date,
+        start_time: time,
+        end_time: time,
+        min_capacity: int | None = None,
+        equipment: list[str] | None = None,
+    ) -> list[Room]:
+        """Rooms not booked during the given slot, with optional filters."""
+        date_str = date_.isoformat()
+        start_str = start_time.strftime("%H:%M")
+        end_str = end_time.strftime("%H:%M")
+
+        query = """
+            SELECT r.* FROM rooms r
+            WHERE r.id NOT IN (
+                SELECT room_id FROM bookings
+                WHERE date = ?
+                  AND start_time < ?
+                  AND end_time > ?
+            )
+        """
+        params: list = [date_str, end_str, start_str]
+
+        if min_capacity is not None:
+            query += " AND r.capacity >= ?"
+            params.append(min_capacity)
+
+        rows = self.conn.execute(query, params).fetchall()
+        rooms = [self._row_to_room(row) for row in rows]
+
+        if equipment:
+            wanted = set(equipment)
+            rooms = [r for r in rooms if wanted.issubset(set(r.equipment))]
+
+        return rooms
+
+    def get_room_availability(
+        self, room_id: int, date_: date
+    ) -> tuple[list[Booking], list[TimeSlot]]:
+        """Return bookings and free slots for a room on a given day (08:00–18:00)."""
+        date_str = date_.isoformat()
+        rows = self.conn.execute(
+            "SELECT * FROM bookings WHERE room_id = ? AND date = ? ORDER BY start_time",
+            (room_id, date_str),
+        ).fetchall()
+
+        bookings = [
+            Booking(
+                id=row["id"],
+                room_id=row["room_id"],
+                booked_by=row["booked_by"],
+                title=row["title"],
+                date=row["date"],
+                start_time=row["start_time"],
+                end_time=row["end_time"],
+                created_at=row["created_at"],
+            )
+            for row in rows
+        ]
+
+        work_start = time(8, 0)
+        work_end = time(18, 0)
+        free_slots: list[TimeSlot] = []
+        cursor = work_start
+
+        for booking in bookings:
+            if booking.start_time > cursor:
+                free_slots.append(TimeSlot(start_time=cursor, end_time=booking.start_time))
+            cursor = booking.end_time
+
+        if cursor < work_end:
+            free_slots.append(TimeSlot(start_time=cursor, end_time=work_end))
+
+        return bookings, free_slots
+
+    def get_bookings_by_user(
+        self, email: str, date_: date | None = None
+    ) -> list[Booking]:
+        """Return all bookings for a user, optionally filtered by date."""
+        query = "SELECT * FROM bookings WHERE booked_by = ?"
+        params: list = [email]
+
+        if date_ is not None:
+            query += " AND date = ?"
+            params.append(date_.isoformat())
+
+        query += " ORDER BY date, start_time"
+        rows = self.conn.execute(query, params).fetchall()
+
+        return [
+            Booking(
+                id=row["id"],
+                room_id=row["room_id"],
+                booked_by=row["booked_by"],
+                title=row["title"],
+                date=row["date"],
+                start_time=row["start_time"],
+                end_time=row["end_time"],
+                created_at=row["created_at"],
+            )
+            for row in rows
+        ]
