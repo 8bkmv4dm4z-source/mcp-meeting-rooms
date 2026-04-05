@@ -22,6 +22,22 @@ def _parse_time(s: str) -> time:
         raise ValueError(f"Invalid time '{s}' — expected HH:MM")
 
 
+def _normalize_equipment(equipment) -> list[str] | None:
+    """Accept equipment as a list, a single string, or a JSON string."""
+    if equipment is None:
+        return None
+    if isinstance(equipment, str):
+        import json
+        try:
+            parsed = json.loads(equipment)
+            if isinstance(parsed, list):
+                return parsed
+        except (json.JSONDecodeError, TypeError):
+            pass
+        return [equipment]
+    return list(equipment)
+
+
 def list_rooms(
     repo: Repository,
     building: str | None = None,
@@ -32,7 +48,7 @@ def list_rooms(
     """List rooms with optional filters."""
     rooms = repo.get_rooms(
         building=building, floor=floor,
-        min_capacity=min_capacity, equipment=equipment,
+        min_capacity=min_capacity, equipment=_normalize_equipment(equipment),
     )
     return [r.model_dump() for r in rooms]
 
@@ -58,7 +74,7 @@ def search_available_rooms(
 
     rooms = repo.search_available_rooms(
         date_=d, start_time=st, end_time=et,
-        building=building, min_capacity=min_capacity, equipment=equipment,
+        building=building, min_capacity=min_capacity, equipment=_normalize_equipment(equipment),
     )
     return [r.model_dump() for r in rooms]
 

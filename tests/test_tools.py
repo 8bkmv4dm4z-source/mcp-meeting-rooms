@@ -4,6 +4,24 @@ from datetime import date, timedelta
 
 from meeting_rooms.repository import Repository
 from meeting_rooms import tools
+from meeting_rooms.tools import _normalize_equipment
+
+
+class TestNormalizeEquipment:
+    def test_none(self):
+        assert _normalize_equipment(None) is None
+
+    def test_list_passthrough(self):
+        assert _normalize_equipment(["projector"]) == ["projector"]
+
+    def test_single_string(self):
+        assert _normalize_equipment("projector") == ["projector"]
+
+    def test_json_string_array(self):
+        assert _normalize_equipment('["projector", "whiteboard"]') == ["projector", "whiteboard"]
+
+    def test_empty_list(self):
+        assert _normalize_equipment([]) == []
 
 
 class TestListRooms:

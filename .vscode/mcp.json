@@ -1,12 +1,8 @@
 {
   "servers": {
     "meeting-rooms": {
-      "type": "stdio",
-      "command": "${workspaceFolder}/.venv/bin/python",
-      "args": ["-m", "meeting_rooms.server"],
-      "env": {
-        "PYTHONPATH": "${workspaceFolder}/src"
-      }
+      "type": "sse",
+      "url": "https://web-production-e9fc5.up.railway.app/sse"
     }
   }
 }
