@@ -1,6 +1,6 @@
 [deploy]
 startCommand = "python scripts/seed.py --schema-only && python -m meeting_rooms.server"
-healthcheckPath = "/sse"
+healthcheckPath = "/health"
 healthcheckTimeout = 30
 
 [environments.production.variables]

@@ -7,6 +7,8 @@ import os
 from pathlib import Path
 
 from mcp.server.fastmcp import FastMCP
+from starlette.requests import Request
+from starlette.responses import JSONResponse
 
 from meeting_rooms.db import get_connection, init_db
 from meeting_rooms.repository import Repository
@@ -18,6 +20,11 @@ HOST = os.getenv("MR_HOST", "0.0.0.0")
 PORT = int(os.getenv("PORT", "8000"))             # Railway injects PORT automatically
 
 mcp = FastMCP("meeting-rooms", host=HOST, port=PORT)
+
+
+@mcp.custom_route("/health", methods=["GET"])
+async def health(request: Request) -> JSONResponse:
+    return JSONResponse({"status": "ok"})
 
 # Lazy-init connection and repository
 _repo: Repository | None = None
