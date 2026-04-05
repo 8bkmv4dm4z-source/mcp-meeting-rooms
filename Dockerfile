@@ -9,4 +9,7 @@ RUN pip install -e .
 
 COPY scripts/ scripts/
 
+ENV MR_TRANSPORT=sse
+ENV MR_HOST=0.0.0.0
+
 CMD python scripts/seed.py --schema-only && python -m meeting_rooms.server
