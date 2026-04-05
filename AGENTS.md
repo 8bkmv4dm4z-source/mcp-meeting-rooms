@@ -10,7 +10,7 @@ Connect via stdio transport. All dates are `YYYY-MM-DD`, all times are `HH:MM` (
 Connect to the hosted server — no local setup required:
 
 ```
-https://web-production-e9fc5.up.railway.app/sse
+https://web-production-e9fc5.up.railway.app/mcp
 ```
 
 ### Option B — Local stdio

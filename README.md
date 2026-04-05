@@ -37,7 +37,7 @@ python -m meeting_rooms.server
 The server is hosted and ready to use. Connect any MCP client to:
 
 ```
-https://web-production-e9fc5.up.railway.app/sse
+https://web-production-e9fc5.up.railway.app/mcp
 ```
 
 For Claude Code / Claude Desktop, add to your `.mcp.json`:
@@ -47,7 +47,7 @@ For Claude Code / Claude Desktop, add to your `.mcp.json`:
   "mcpServers": {
     "meeting-rooms": {
       "type": "sse",
-      "url": "https://web-production-e9fc5.up.railway.app/sse"
+      "url": "https://web-production-e9fc5.up.railway.app/mcp"
     }
   }
 }

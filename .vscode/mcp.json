@@ -2,7 +2,7 @@
   "servers": {
     "meeting-rooms": {
       "type": "sse",
-      "url": "https://web-production-e9fc5.up.railway.app/sse"
+      "url": "https://web-production-e9fc5.up.railway.app/mcp"
     }
   }
 }
