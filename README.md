@@ -30,36 +30,51 @@ python scripts/seed.py
 python -m meeting_rooms.server
 ```
 
-## Connect to Claude Desktop / Claude Code
+## Calling the Server
 
-Add to your MCP config (adjust paths for your environment):
+### Option 1 — MCP Inspector (recommended for exploration)
+
+The easiest way to interact with the server — opens a browser UI where you can call any tool without writing JSON.
+
+```bash
+mcp dev src/meeting_rooms/server.py --with-editable .
+```
+
+Visit `http://localhost:6274` and use the tool explorer.
+
+### Option 2 — Claude Code / Claude Desktop
+
+Drop a `.mcp.json` file in the project root:
 
 ```json
 {
   "mcpServers": {
     "meeting-rooms": {
       "type": "stdio",
-      "command": "/path/to/.venv/bin/python",
+      "command": "python",
       "args": ["-m", "meeting_rooms.server"],
       "env": {
-        "PYTHONPATH": "/path/to/mcp-meeting-rooms/src"
+        "PYTHONPATH": "src"
       }
     }
   }
 }
 ```
 
-Then ask Claude: *"Find me a room for 10 people with a projector tomorrow at 2pm"*
+Then run `claude` in the project directory and ask naturally:
 
-## Manual Testing (raw stdio)
+> *"Find me a room for 10 people with a projector tomorrow at 2pm"*
+
+### Option 3 — Raw stdio (no dependencies)
 
 ```bash
-# MCP handshake then call a tool
 echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}}}
 {"jsonrpc":"2.0","method":"notifications/initialized"}
 {"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"list_rooms","arguments":{"min_capacity":10}}}' \
   | python -m meeting_rooms.server
 ```
+
+See `AGENTS.md` for the full tool reference and more example calls.
 
 ## Run Tests
 
