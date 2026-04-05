@@ -37,11 +37,10 @@ python -m meeting_rooms.server
 The easiest way to interact with the server — opens a browser UI where you can call any tool without writing JSON.
 
 ```bash
-source .venv/bin/activate   # or: .venv/bin/mcp dev ...
-mcp dev src/meeting_rooms/server.py --with-editable .
+./inspect.sh
 ```
 
-Visit `http://localhost:6274` and use the tool explorer.
+Visit the URL printed in the terminal, then click **Connect**. The server is pre-configured — no command or arguments to fill in.
 
 ### Option 2 — Claude Code / Claude Desktop
 
