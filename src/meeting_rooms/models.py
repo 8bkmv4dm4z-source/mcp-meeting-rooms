@@ -43,11 +43,25 @@ class ConflictDetail(BaseModel):
     title:str
 
 
+class CrossMcpAction(BaseModel):
+    action: str                  # e.g. "notify_via_slack", "notify_via_email", "request_swap"
+    recipient_name: str
+    subject: str | None = None   # email subject
+    message: str                 # ready-to-send message body
+    metadata: dict[str, Any] = {}
+
+
+class CrossMcpContext(BaseModel):
+    conflict_owner: dict[str, Any]          # name, booking_id, room, date, time_slot
+    suggested_actions: list[CrossMcpAction]
+
+
 class BookingResult(BaseModel):
-    success:bool
-    blocking:Booking|None=None
-    conflict:ConflictDetail|None=None
-    alternatives_hint:dict[str,Any]|None=None
+    success: bool
+    booking: Booking | None = None
+    conflict: ConflictDetail | None = None
+    alternatives: list[Room] = []
+    cross_mcp_context: CrossMcpContext | None = None
 
 
 class TimeSlot(BaseModel):

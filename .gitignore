@@ -5,4 +5,7 @@ __pycache__/
 dist/
 build/
 meeting_rooms.db
+meeting_rooms.db-shm
+meeting_rooms.db-wal
 .env
+.mcp.json

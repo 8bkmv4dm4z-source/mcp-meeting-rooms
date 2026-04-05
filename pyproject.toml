@@ -17,3 +17,6 @@ dev = ["pytest", "pytest-asyncio"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/meeting_rooms"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]

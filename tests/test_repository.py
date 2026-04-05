@@ -35,7 +35,10 @@ class TestCreateBooking:
         assert result.success is False
         assert result.conflict is not None
         assert result.conflict.booked_by == "alice@test.com"
-        assert result.alternatives_hint is not None
+        assert len(result.alternatives) > 0
+        assert result.cross_mcp_context is not None
+        assert result.cross_mcp_context.conflict_owner["name"] == "alice@test.com"
+        assert len(result.cross_mcp_context.suggested_actions) == 3
 
     def test_conflict_partial_overlap(self, db):
         repo = Repository(db)
@@ -148,6 +151,22 @@ class TestSearchAvailableRooms:
             equipment=["video_conf"],
         )
         assert all("video_conf" in r.equipment for r in rooms)
+
+    def test_with_building_filter(self, db):
+        repo = Repository(db)
+        today = date.today()
+        # Tower B has rooms 4 and 5 only
+        rooms = repo.search_available_rooms(
+            date_=today,
+            start_time=time(16, 0),
+            end_time=time(17, 0),
+            building="Tower B",
+        )
+        room_ids = [r.id for r in rooms]
+        assert all(r.building_id == 2 for r in rooms)
+        assert 1 not in room_ids
+        assert 2 not in room_ids
+        assert 3 not in room_ids
 
 
 class TestGetRoomAvailability:

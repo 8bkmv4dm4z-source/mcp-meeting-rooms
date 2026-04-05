@@ -12,6 +12,8 @@ from meeting_rooms.models import (
     BookingResult,
     Building,
     ConflictDetail,
+    CrossMcpAction,
+    CrossMcpContext,
     Room,
     TimeSlot,
 )
@@ -107,10 +109,65 @@ class Repository:
                 end_time=conflict_row["end_time"],
                 title=conflict_row["title"],
             )
+
+            alternatives = self.search_available_rooms(date_, start_time, end_time)
+
+            time_slot = f"{start_str}–{end_str}"
+            owner = conflict_row["booked_by"]
+            room_name = conflict_row["room_name"]
+            meeting_title = conflict_row["title"]
+            meeting_date = conflict_row["date"]
+
+            cross_mcp_context = CrossMcpContext(
+                conflict_owner={
+                    "name": owner,
+                    "booking_id": conflict_row["id"],
+                    "room": room_name,
+                    "date": meeting_date,
+                    "time_slot": time_slot,
+                    "meeting_title": meeting_title,
+                },
+                suggested_actions=[
+                    CrossMcpAction(
+                        action="notify_via_slack",
+                        recipient_name=owner,
+                        message=(
+                            f"Hi {owner}, your meeting '{meeting_title}' is booked in "
+                            f"{room_name} on {meeting_date} {time_slot}. "
+                            f"Someone is requesting the same slot — can you switch rooms?"
+                        ),
+                        metadata={"booking_id": conflict_row["id"]},
+                    ),
+                    CrossMcpAction(
+                        action="notify_via_email",
+                        recipient_name=owner,
+                        subject=f"Meeting Room Conflict — {room_name} on {meeting_date}",
+                        message=(
+                            f"Hi {owner},\n\n"
+                            f"Your booking '{meeting_title}' in {room_name} on {meeting_date} "
+                            f"({time_slot}) has a scheduling conflict.\n\n"
+                            f"There are {len(alternatives)} alternative room(s) available. "
+                            f"Please coordinate or consider switching."
+                        ),
+                        metadata={"booking_id": conflict_row["id"], "alternative_count": len(alternatives)},
+                    ),
+                    CrossMcpAction(
+                        action="request_swap",
+                        recipient_name=owner,
+                        message=f"Swap request for booking #{conflict_row['id']} ({room_name}, {time_slot})",
+                        metadata={
+                            "booking_id": conflict_row["id"],
+                            "alternative_room_ids": [r.id for r in alternatives],
+                        },
+                    ),
+                ],
+            )
+
             return BookingResult(
                 success=False,
                 conflict=conflict,
-                alternatives_hint={"message": "Try a different time or room"},
+                alternatives=alternatives,
+                cross_mcp_context=cross_mcp_context,
             )
 
         cur = self.conn.execute(
@@ -150,22 +207,37 @@ class Repository:
         end_time: time,
         min_capacity: int | None = None,
         equipment: list[str] | None = None,
+        building: str | None = None,
     ) -> list[Room]:
         """Rooms not booked during the given slot, with optional filters."""
         date_str = date_.isoformat()
         start_str = start_time.strftime("%H:%M")
         end_str = end_time.strftime("%H:%M")
 
-        query = """
-            SELECT r.* FROM rooms r
-            WHERE r.id NOT IN (
-                SELECT room_id FROM bookings
-                WHERE date = ?
-                  AND start_time < ?
-                  AND end_time > ?
-            )
-        """
-        params: list = [date_str, end_str, start_str]
+        if building:
+            query = """
+                SELECT r.* FROM rooms r
+                JOIN buildings b ON r.building_id = b.id
+                WHERE b.name = ?
+                  AND r.id NOT IN (
+                    SELECT room_id FROM bookings
+                    WHERE date = ?
+                      AND start_time < ?
+                      AND end_time > ?
+                  )
+            """
+            params: list = [building, date_str, end_str, start_str]
+        else:
+            query = """
+                SELECT r.* FROM rooms r
+                WHERE r.id NOT IN (
+                    SELECT room_id FROM bookings
+                    WHERE date = ?
+                      AND start_time < ?
+                      AND end_time > ?
+                )
+            """
+            params = [date_str, end_str, start_str]
 
         if min_capacity is not None:
             query += " AND r.capacity >= ?"
