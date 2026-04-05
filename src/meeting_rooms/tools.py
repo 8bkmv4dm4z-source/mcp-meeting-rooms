@@ -9,11 +9,17 @@ from meeting_rooms.repository import Repository
 
 
 def _parse_date(s: str) -> date:
-    return date.fromisoformat(s)
+    try:
+        return date.fromisoformat(s)
+    except ValueError:
+        raise ValueError(f"Invalid date '{s}' — expected YYYY-MM-DD")
 
 
 def _parse_time(s: str) -> time:
-    return time.fromisoformat(s)
+    try:
+        return time.fromisoformat(s)
+    except ValueError:
+        raise ValueError(f"Invalid time '{s}' — expected HH:MM")
 
 
 def list_rooms(
@@ -41,9 +47,12 @@ def search_available_rooms(
     equipment: list[str] | None = None,
 ) -> list[dict]:
     """Find available rooms for a time slot."""
-    d = _parse_date(date)
-    st = _parse_time(start_time)
-    et = _parse_time(end_time)
+    try:
+        d = _parse_date(date)
+        st = _parse_time(start_time)
+        et = _parse_time(end_time)
+    except ValueError as e:
+        return [{"error": str(e)}]
     if et <= st:
         return [{"error": "end_time must be after start_time"}]
 
@@ -60,7 +69,10 @@ def get_room_availability(
     date: str,
 ) -> dict:
     """Get bookings and free slots for a room on a date."""
-    d = _parse_date(date)
+    try:
+        d = _parse_date(date)
+    except ValueError as e:
+        return {"error": str(e)}
     bookings, free_slots = repo.get_room_availability(room_id=room_id, date_=d)
     return {
         "room_id": room_id,
@@ -80,9 +92,12 @@ def book_room(
     title: str,
 ) -> dict:
     """Book a room. Returns structured result with conflict detail if taken."""
-    d = _parse_date(date)
-    st = _parse_time(start_time)
-    et = _parse_time(end_time)
+    try:
+        d = _parse_date(date)
+        st = _parse_time(start_time)
+        et = _parse_time(end_time)
+    except ValueError as e:
+        return {"success": False, "error": str(e)}
     if et <= st:
         return {"success": False, "error": "end_time must be after start_time"}
 
@@ -106,6 +121,9 @@ def my_bookings(
     date: str | None = None,
 ) -> list[dict]:
     """Get bookings for a specific user."""
-    d = _parse_date(date) if date else None
+    try:
+        d = _parse_date(date) if date else None
+    except ValueError as e:
+        return [{"error": str(e)}]
     bookings = repo.get_bookings_by_user(email=booked_by, date_=d)
     return [b.model_dump(mode="json") for b in bookings]

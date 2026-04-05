@@ -1,7 +1,7 @@
 
 from datetime import date, time, timedelta
 
-from src.meeting_rooms.repository import Repository
+from meeting_rooms.repository import Repository
 
 
 class TestCreateBooking:
