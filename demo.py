@@ -30,6 +30,7 @@ import json
 import sys
 from datetime import date, timedelta
 from pathlib import Path
+from typing import Any
 
 from mcp import ClientSession
 from mcp.client.stdio import StdioServerParameters, stdio_client
@@ -57,12 +58,12 @@ def banner(title: str) -> None:
     print(f"{'=' * width}")
 
 
-def call_result(raw) -> dict | list:
+def call_result(raw: Any) -> Any:
     """Unwrap the text content from an MCP tool response."""
     return json.loads(raw.content[0].text)
 
 
-async def call(session: ClientSession, tool: str, **kwargs) -> dict | list:
+async def call(session: ClientSession, tool: str, **kwargs: Any) -> Any:
     """Call an MCP tool and return the parsed JSON result."""
     result = await session.call_tool(tool, arguments=kwargs)
     return call_result(result)
