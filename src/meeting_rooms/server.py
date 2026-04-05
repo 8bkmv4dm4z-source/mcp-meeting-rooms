@@ -64,6 +64,8 @@ def search_available_rooms(
     equipment: list[str] | None = None,
 ) -> str:
     """Find rooms available for a specific time slot. Date as YYYY-MM-DD, times as HH:MM."""
+    import logging
+    logging.info(f"search_available_rooms called: date={date!r}, start_time={start_time!r}, end_time={end_time!r}, building={building!r}, min_capacity={min_capacity!r}, equipment={equipment!r} (type={type(equipment).__name__})")
     result = tool_funcs.search_available_rooms(
         _get_repo(), date=date, start_time=start_time, end_time=end_time,
         building=building, min_capacity=min_capacity, equipment=equipment,
