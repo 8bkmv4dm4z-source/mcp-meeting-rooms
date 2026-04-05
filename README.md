@@ -146,6 +146,13 @@ tests/
 | `MR_HOST` | `0.0.0.0` | Host to bind when using SSE transport |
 | `PORT` | `8000` | Port to listen on (Railway injects this automatically) |
 
+## Known Limitations
+
+- **SQLite is local to each server instance.** When running locally via stdio, the database is a file on your machine. When running on Railway via SSE, it uses a separate database on the server. Bookings made locally do not appear on the hosted server and vice versa.
+- **No authentication.** The SSE endpoint is open — anyone with the URL can book and cancel rooms. Fine for a demo, not for production.
+- **No concurrent write scaling.** SQLite serializes writes via `BEGIN IMMEDIATE`. Reads are fully concurrent, but heavy write loads (100+ simultaneous bookings) will queue up. Adequate for ~50 concurrent users.
+- **Seed data is per-instance.** Running `python scripts/seed.py` populates only the local database. The Railway deployment runs `--schema-only` on startup (tables only, no demo data).
+
 ## Equipment Tags
 
 `whiteboard`, `projector`, `video_conf`, `phone`

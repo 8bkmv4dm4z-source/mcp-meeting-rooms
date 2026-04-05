@@ -18,6 +18,8 @@ def db() -> sqlite3.Connection:
     conn = get_connection(":memory:")
     init_db(conn)
 
+    conn.execute("BEGIN")
+
     # Seed buildings
     conn.execute("INSERT INTO buildings (name, address) VALUES (?, ?)", ("Tower A", "Address A"))
     conn.execute("INSERT INTO buildings (name, address) VALUES (?, ?)", ("Tower B", "Address B"))
@@ -52,5 +54,5 @@ def db() -> sqlite3.Connection:
         (1, "alice@test.com", "Planning", tomorrow, "10:00", "11:00"),
     )
 
-    conn.commit()
+    conn.execute("COMMIT")
     return conn
