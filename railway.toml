@@ -1,0 +1,7 @@
+[deploy]
+startCommand = "python scripts/seed.py && python -m meeting_rooms.server"
+healthcheckPath = "/"
+healthcheckTimeout = 10
+
+[environments.production.variables]
+MR_TRANSPORT = "sse"

@@ -13,8 +13,11 @@ from meeting_rooms.repository import Repository
 from meeting_rooms import tools as tool_funcs
 
 DB_PATH = Path(os.getenv("MR_DB_PATH", "meeting_rooms.db"))
+TRANSPORT = os.getenv("MR_TRANSPORT", "stdio")   # "stdio" | "sse" | "streamable-http"
+HOST = os.getenv("MR_HOST", "0.0.0.0")
+PORT = int(os.getenv("PORT", "8000"))             # Railway injects PORT automatically
 
-mcp = FastMCP("meeting-rooms")
+mcp = FastMCP("meeting-rooms", host=HOST, port=PORT)
 
 # Lazy-init connection and repository
 _repo: Repository | None = None
@@ -101,7 +104,7 @@ def my_bookings(booked_by: str, date: str | None = None) -> str:
 
 
 def main():
-    mcp.run(transport="stdio")
+    mcp.run(transport=TRANSPORT)  # type: ignore[arg-type]
 
 
 if __name__ == "__main__":

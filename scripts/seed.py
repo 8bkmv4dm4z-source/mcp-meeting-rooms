@@ -102,4 +102,16 @@ def seed(db_path: str | Path = "meeting_rooms.db") -> None:
 
 
 if __name__ == "__main__":
-    seed()
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--schema-only", action="store_true",
+                        help="Create tables only, skip demo data")
+    args = parser.parse_args()
+    if args.schema_only:
+        from meeting_rooms.db import get_connection, init_db
+        conn = get_connection()
+        init_db(conn)
+        conn.close()
+        print("Schema initialised.")
+    else:
+        seed()
