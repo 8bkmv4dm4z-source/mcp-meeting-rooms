@@ -14,5 +14,8 @@ RUN chmod +x start.sh
 
 ENV MR_TRANSPORT=sse
 ENV MR_HOST=0.0.0.0
+ENV PORT=8000
+
+EXPOSE 8000
 
 CMD ["./start.sh"]
