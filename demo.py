@@ -30,7 +30,9 @@ import json
 import sys
 from datetime import date, timedelta
 from pathlib import Path
-from typing import Any
+from typing import Any, TypeVar
+
+T = TypeVar("T")
 
 from mcp import ClientSession
 from mcp.client.stdio import StdioServerParameters, stdio_client
@@ -58,15 +60,11 @@ def banner(title: str) -> None:
     print(f"{'=' * width}")
 
 
-def call_result(raw: Any) -> Any:
-    """Unwrap the text content from an MCP tool response."""
-    return json.loads(raw.content[0].text)
-
-
-async def call(session: ClientSession, tool: str, **kwargs: Any) -> Any:
-    """Call an MCP tool and return the parsed JSON result."""
-    result = await session.call_tool(tool, arguments=kwargs)
-    return call_result(result)
+async def call(session: ClientSession, tool: str, result_type: type[T], **kwargs: Any) -> T:
+    """Call an MCP tool and return the parsed result cast to result_type."""
+    raw = await session.call_tool(tool, arguments=kwargs)
+    parsed = json.loads(raw.content[0].text)
+    return parsed  # type: ignore[return-value]  — JSON structure matches T by convention
 
 
 # ---------------------------------------------------------------------------
@@ -91,7 +89,7 @@ async def run_demo() -> None:
             banner("Step 1 — Find large rooms with a projector")
 
             rooms = await call(
-                session, "list_rooms",
+                session, "list_rooms", list,
                 min_capacity=10,
                 equipment=["projector"],
             )
@@ -110,7 +108,7 @@ async def run_demo() -> None:
             banner(f"Step 2 — Availability for room {room_id} on {DEMO_DATE}")
 
             availability = await call(
-                session, "get_room_availability",
+                session, "get_room_availability", dict,
                 room_id=room_id,
                 date=DEMO_DATE,
             )
@@ -138,7 +136,7 @@ async def run_demo() -> None:
             banner(f"Step 3 — Alice books room {room_id}")
 
             alice_result = await call(
-                session, "book_room",
+                session, "book_room", dict,
                 room_id=room_id,
                 date=DEMO_DATE,
                 start_time=start_time,
@@ -159,7 +157,7 @@ async def run_demo() -> None:
             banner(f"Step 4 — Bob tries to book the same slot → conflict")
 
             bob_result = await call(
-                session, "book_room",
+                session, "book_room", dict,
                 room_id=room_id,
                 date=DEMO_DATE,
                 start_time=start_time,
@@ -204,7 +202,7 @@ async def run_demo() -> None:
                 alt = alternatives[0]
                 print(f"Trying alternative: [{alt['id']}] '{alt['name']}'")
                 bob_booking = await call(
-                    session, "book_room",
+                    session, "book_room", dict,
                     room_id=alt["id"],
                     date=DEMO_DATE,
                     start_time=start_time,
@@ -222,7 +220,7 @@ async def run_demo() -> None:
             # ------------------------------------------------------------------
             banner(f"Step 7 — Cancel Alice's booking (ID {alice_booking_id})")
 
-            cancel = await call(session, "cancel_booking", booking_id=alice_booking_id)
+            cancel = await call(session, "cancel_booking", dict, booking_id=alice_booking_id)
             print(f"Cancelled: {cancel['success']}")
 
             # ------------------------------------------------------------------
@@ -231,7 +229,7 @@ async def run_demo() -> None:
             banner(f"Step 8 — Verify Alice has no bookings on {DEMO_DATE}")
 
             alice_bookings = await call(
-                session, "my_bookings",
+                session, "my_bookings", list,
                 booked_by=ALICE,
                 date=DEMO_DATE,
             )
