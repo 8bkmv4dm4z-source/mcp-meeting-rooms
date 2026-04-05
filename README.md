@@ -42,7 +42,19 @@ The easiest way to interact with the server — opens a browser UI where you can
 
 Visit the URL printed in the terminal, then click **Connect**. The server is pre-configured — no command or arguments to fill in.
 
-### Option 2 — Claude Code / Claude Desktop
+### Option 2 — GitHub Copilot in VS Code
+
+Open the repo folder in VS Code. The `.vscode/mcp.json` file is already included — VS Code picks it up automatically.
+
+1. Open the **Copilot Chat** panel (`Ctrl+Alt+I`)
+2. Switch to **Agent mode** (the `@` dropdown → select your server, or it appears automatically)
+3. Ask naturally: *"Find me a room for 8 people with a projector tomorrow at 3pm"*
+
+Copilot will call the MCP tools and show results inline.
+
+> **Note:** Requires VS Code 1.99+ and the GitHub Copilot extension.
+
+### Option 3 — Claude Code / Claude Desktop
 
 Drop a `.mcp.json` file in the project root:
 
@@ -65,7 +77,7 @@ Then run `claude` in the project directory and ask naturally:
 
 > *"Find me a room for 10 people with a projector tomorrow at 2pm"*
 
-### Option 3 — Raw stdio (no dependencies)
+### Option 4 — Raw stdio (no dependencies)
 
 ```bash
 echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}}}
