@@ -32,7 +32,34 @@ python -m meeting_rooms.server
 
 ## Calling the Server
 
-### Option 1 — MCP Inspector (recommended for exploration)
+### Option 1 — Remote SSE (no setup required)
+
+The server is hosted and ready to use. Connect any MCP client to:
+
+```
+https://web-production-e9fc5.up.railway.app/sse
+```
+
+For Claude Code / Claude Desktop, add to your `.mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "meeting-rooms": {
+      "type": "sse",
+      "url": "https://web-production-e9fc5.up.railway.app/sse"
+    }
+  }
+}
+```
+
+Or test with curl:
+
+```bash
+curl https://web-production-e9fc5.up.railway.app/health
+```
+
+### Option 2 — MCP Inspector (recommended for exploration)
 
 The easiest way to interact with the server — opens a browser UI where you can call any tool without writing JSON.
 
@@ -42,7 +69,7 @@ The easiest way to interact with the server — opens a browser UI where you can
 
 Visit the URL printed in the terminal, then click **Connect**. The server is pre-configured — no command or arguments to fill in.
 
-### Option 2 — GitHub Copilot in VS Code
+### Option 3 — GitHub Copilot in VS Code
 
 Open the repo folder in VS Code. The `.vscode/mcp.json` file is already included — VS Code picks it up automatically.
 
@@ -54,7 +81,7 @@ Copilot will call the MCP tools and show results inline.
 
 > **Note:** Requires VS Code 1.99+ and the GitHub Copilot extension.
 
-### Option 3 — Claude Code / Claude Desktop
+### Option 4 — Claude Code / Claude Desktop (local stdio)
 
 Drop a `.mcp.json` file in the project root:
 
@@ -77,7 +104,7 @@ Then run `claude` in the project directory and ask naturally:
 
 > *"Find me a room for 10 people with a projector tomorrow at 2pm"*
 
-### Option 4 — Raw stdio (no dependencies)
+### Option 5 — Raw stdio (no dependencies)
 
 ```bash
 echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}}}
@@ -114,7 +141,10 @@ tests/
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `MR_DB_PATH` | `meeting_rooms.db` | Path to the SQLite database file |
+| `MR_DB_PATH` | `meeting_rooms.db` | Path to the SQLite database file (set to `/data/meeting_rooms.db` on Railway with a volume mounted at `/data`) |
+| `MR_TRANSPORT` | `stdio` | Transport mode: `stdio`, `sse`, or `streamable-http` |
+| `MR_HOST` | `0.0.0.0` | Host to bind when using SSE transport |
+| `PORT` | `8000` | Port to listen on (Railway injects this automatically) |
 
 ## Equipment Tags
 

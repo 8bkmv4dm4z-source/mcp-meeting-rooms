@@ -5,7 +5,17 @@ Connect via stdio transport. All dates are `YYYY-MM-DD`, all times are `HH:MM` (
 
 ## Connection
 
-The server uses stdio transport. You must complete the MCP handshake before issuing any tool calls:
+### Option A — Remote SSE (recommended)
+
+Connect to the hosted server — no local setup required:
+
+```
+https://web-production-e9fc5.up.railway.app/sse
+```
+
+### Option B — Local stdio
+
+Run the server locally via stdio transport. You must complete the MCP handshake before issuing any tool calls:
 
 1. Send `initialize` request
 2. Send `notifications/initialized` notification (no response expected)

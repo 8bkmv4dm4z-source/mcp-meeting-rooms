@@ -1,6 +1,8 @@
 #!/bin/sh
 set -e
 
+mkdir -p "$(dirname "${MR_DB_PATH:-meeting_rooms.db}")"
+
 echo "=== Starting seed ==="
 python scripts/seed.py --schema-only
 

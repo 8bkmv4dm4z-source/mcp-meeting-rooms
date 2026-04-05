@@ -43,7 +43,7 @@ CREATE INDEX IF NOT EXISTS idx_bookings_user ON bookings(booked_by);
     """
 def get_connection(db_path: str | Path = "meeting_rooms.db") -> sqlite3.Connection:
     """Create a configured SQLite connection."""
-    conn = sqlite3.connect(str(db_path))
+    conn = sqlite3.connect(str(db_path), isolation_level=None)
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA busy_timeout=5000")
     conn.execute("PRAGMA foreign_keys=ON")

@@ -84,6 +84,10 @@ class Repository:
         start_str = start_time.strftime("%H:%M")
         end_str = end_time.strftime("%H:%M")
 
+        # BEGIN IMMEDIATE acquires a write lock upfront, preventing
+        # two concurrent bookings from both passing the conflict check.
+        self.conn.execute("BEGIN IMMEDIATE")
+
         conflict_row = self.conn.execute(
             """
             SELECT b.*, r.name AS room_name
@@ -163,6 +167,7 @@ class Repository:
                 ],
             )
 
+            self.conn.rollback()
             return BookingResult(
                 success=False,
                 conflict=conflict,
@@ -177,7 +182,7 @@ class Repository:
             """,
             (room_id, booked_by, title, date_str, start_str, end_str),
         )
-        self.conn.commit()
+        self.conn.execute("COMMIT")
         row = self.conn.execute(
             "SELECT * FROM bookings WHERE id = ?", (cur.lastrowid,)
         ).fetchone()
@@ -194,10 +199,11 @@ class Repository:
         return BookingResult(success=True, booking=booking)
 
     def cancel_booking(self, booking_id: int) -> bool:
+        self.conn.execute("BEGIN IMMEDIATE")
         cur = self.conn.execute(
             "DELETE FROM bookings WHERE id = ?", (booking_id,)
         )
-        self.conn.commit()
+        self.conn.execute("COMMIT")
         return cur.rowcount > 0
 
     def search_available_rooms(
