@@ -87,102 +87,106 @@ class Repository:
         # BEGIN IMMEDIATE acquires a write lock upfront, preventing
         # two concurrent bookings from both passing the conflict check.
         self.conn.execute("BEGIN IMMEDIATE")
+        try:
+            conflict_row = self.conn.execute(
+                """
+                SELECT b.*, r.name AS room_name
+                FROM bookings b
+                JOIN rooms r ON b.room_id = r.id
+                WHERE b.room_id = ?
+                  AND b.date = ?
+                  AND b.start_time < ?
+                  AND b.end_time > ?
+                LIMIT 1
+                """,
+                (room_id, date_str, end_str, start_str),
+            ).fetchone()
 
-        conflict_row = self.conn.execute(
-            """
-            SELECT b.*, r.name AS room_name
-            FROM bookings b
-            JOIN rooms r ON b.room_id = r.id
-            WHERE b.room_id = ?
-              AND b.date = ?
-              AND b.start_time < ?
-              AND b.end_time > ?
-            LIMIT 1
-            """,
-            (room_id, date_str, end_str, start_str),
-        ).fetchone()
+            if conflict_row:
+                self.conn.execute("ROLLBACK")
 
-        if conflict_row:
-            conflict = ConflictDetail(
-                booking_id=conflict_row["id"],
-                room_id=conflict_row["room_id"],
-                room_name=conflict_row["room_name"],
-                booked_by=conflict_row["booked_by"],
-                date=conflict_row["date"],
-                start_time=conflict_row["start_time"],
-                end_time=conflict_row["end_time"],
-                title=conflict_row["title"],
-            )
+                conflict = ConflictDetail(
+                    booking_id=conflict_row["id"],
+                    room_id=conflict_row["room_id"],
+                    room_name=conflict_row["room_name"],
+                    booked_by=conflict_row["booked_by"],
+                    date=conflict_row["date"],
+                    start_time=conflict_row["start_time"],
+                    end_time=conflict_row["end_time"],
+                    title=conflict_row["title"],
+                )
 
-            alternatives = self.search_available_rooms(date_, start_time, end_time)
+                alternatives = self.search_available_rooms(date_, start_time, end_time)
 
-            time_slot = f"{start_str}–{end_str}"
-            owner = conflict_row["booked_by"]
-            room_name = conflict_row["room_name"]
-            meeting_title = conflict_row["title"]
-            meeting_date = conflict_row["date"]
+                time_slot = f"{start_str}–{end_str}"
+                owner = conflict_row["booked_by"]
+                room_name = conflict_row["room_name"]
+                meeting_title = conflict_row["title"]
+                meeting_date = conflict_row["date"]
 
-            cross_mcp_context = CrossMcpContext(
-                conflict_owner={
-                    "name": owner,
-                    "booking_id": conflict_row["id"],
-                    "room": room_name,
-                    "date": meeting_date,
-                    "time_slot": time_slot,
-                    "meeting_title": meeting_title,
-                },
-                suggested_actions=[
-                    CrossMcpAction(
-                        action="notify_via_slack",
-                        recipient_name=owner,
-                        message=(
-                            f"Hi {owner}, your meeting '{meeting_title}' is booked in "
-                            f"{room_name} on {meeting_date} {time_slot}. "
-                            f"Someone is requesting the same slot — can you switch rooms?"
+                cross_mcp_context = CrossMcpContext(
+                    conflict_owner={
+                        "name": owner,
+                        "booking_id": conflict_row["id"],
+                        "room": room_name,
+                        "date": meeting_date,
+                        "time_slot": time_slot,
+                        "meeting_title": meeting_title,
+                    },
+                    suggested_actions=[
+                        CrossMcpAction(
+                            action="notify_via_slack",
+                            recipient_name=owner,
+                            message=(
+                                f"Hi {owner}, your meeting '{meeting_title}' is booked in "
+                                f"{room_name} on {meeting_date} {time_slot}. "
+                                f"Someone is requesting the same slot — can you switch rooms?"
+                            ),
+                            metadata={"booking_id": conflict_row["id"]},
                         ),
-                        metadata={"booking_id": conflict_row["id"]},
-                    ),
-                    CrossMcpAction(
-                        action="notify_via_email",
-                        recipient_name=owner,
-                        subject=f"Meeting Room Conflict — {room_name} on {meeting_date}",
-                        message=(
-                            f"Hi {owner},\n\n"
-                            f"Your booking '{meeting_title}' in {room_name} on {meeting_date} "
-                            f"({time_slot}) has a scheduling conflict.\n\n"
-                            f"There are {len(alternatives)} alternative room(s) available. "
-                            f"Please coordinate or consider switching."
+                        CrossMcpAction(
+                            action="notify_via_email",
+                            recipient_name=owner,
+                            subject=f"Meeting Room Conflict — {room_name} on {meeting_date}",
+                            message=(
+                                f"Hi {owner},\n\n"
+                                f"Your booking '{meeting_title}' in {room_name} on {meeting_date} "
+                                f"({time_slot}) has a scheduling conflict.\n\n"
+                                f"There are {len(alternatives)} alternative room(s) available. "
+                                f"Please coordinate or consider switching."
+                            ),
+                            metadata={"booking_id": conflict_row["id"], "alternative_count": len(alternatives)},
                         ),
-                        metadata={"booking_id": conflict_row["id"], "alternative_count": len(alternatives)},
-                    ),
-                    CrossMcpAction(
-                        action="request_swap",
-                        recipient_name=owner,
-                        message=f"Swap request for booking #{conflict_row['id']} ({room_name}, {time_slot})",
-                        metadata={
-                            "booking_id": conflict_row["id"],
-                            "alternative_room_ids": [r.id for r in alternatives],
-                        },
-                    ),
-                ],
-            )
+                        CrossMcpAction(
+                            action="request_swap",
+                            recipient_name=owner,
+                            message=f"Swap request for booking #{conflict_row['id']} ({room_name}, {time_slot})",
+                            metadata={
+                                "booking_id": conflict_row["id"],
+                                "alternative_room_ids": [r.id for r in alternatives],
+                            },
+                        ),
+                    ],
+                )
 
-            self.conn.rollback()
-            return BookingResult(
-                success=False,
-                conflict=conflict,
-                alternatives=alternatives,
-                cross_mcp_context=cross_mcp_context,
-            )
+                return BookingResult(
+                    success=False,
+                    conflict=conflict,
+                    alternatives=alternatives,
+                    cross_mcp_context=cross_mcp_context,
+                )
 
-        cur = self.conn.execute(
-            """
-            INSERT INTO bookings (room_id, booked_by, title, date, start_time, end_time)
-            VALUES (?, ?, ?, ?, ?, ?)
-            """,
-            (room_id, booked_by, title, date_str, start_str, end_str),
-        )
-        self.conn.execute("COMMIT")
+            cur = self.conn.execute(
+                """
+                INSERT INTO bookings (room_id, booked_by, title, date, start_time, end_time)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (room_id, booked_by, title, date_str, start_str, end_str),
+            )
+            self.conn.execute("COMMIT")
+        except Exception:
+            self.conn.execute("ROLLBACK")
+            raise
         row = self.conn.execute(
             "SELECT * FROM bookings WHERE id = ?", (cur.lastrowid,)
         ).fetchone()
