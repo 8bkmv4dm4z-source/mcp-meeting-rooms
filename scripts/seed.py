@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 from datetime import date, timedelta
 from pathlib import Path
@@ -62,7 +63,9 @@ SAMPLE_BOOKINGS = [
 ]
 
 
-def seed(db_path: str | Path = "meeting_rooms.db") -> None:
+def seed(db_path: str | Path | None = None) -> None:
+    if db_path is None:
+        db_path = os.getenv("MR_DB_PATH", "meeting_rooms.db")
     conn = get_connection(db_path)
     init_db(conn)
 
@@ -109,9 +112,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
     if args.schema_only:
         from meeting_rooms.db import get_connection, init_db
-        conn = get_connection()
+        db_path = os.getenv("MR_DB_PATH", "meeting_rooms.db")
+        conn = get_connection(db_path)
         init_db(conn)
         conn.close()
-        print("Schema initialised.")
+        print(f"Schema initialised at {db_path}.")
     else:
         seed()

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import os
 from pathlib import Path
 
@@ -45,13 +44,12 @@ def list_rooms(
     floor: int | None = None,
     min_capacity: int | None = None,
     equipment: list[str] | None = None,
-) -> str:
+) -> list[dict]:
     """List meeting rooms. Filter by building name, floor, minimum capacity, or required equipment (e.g. ["projector", "video_conf"])."""
-    result = tool_funcs.list_rooms(
+    return tool_funcs.list_rooms(
         _get_repo(), building=building, floor=floor,
         min_capacity=min_capacity, equipment=equipment,
     )
-    return json.dumps(result, default=str)
 
 
 @mcp.tool()
@@ -62,20 +60,18 @@ def search_available_rooms(
     building: str | None = None,
     min_capacity: int | None = None,
     equipment: list[str] | None = None,
-) -> str:
+) -> list[dict]:
     """Find rooms available for a specific time slot. Date as YYYY-MM-DD, times as HH:MM."""
-    result = tool_funcs.search_available_rooms(
+    return tool_funcs.search_available_rooms(
         _get_repo(), date=date, start_time=start_time, end_time=end_time,
         building=building, min_capacity=min_capacity, equipment=equipment,
     )
-    return json.dumps(result, default=str)
 
 
 @mcp.tool()
-def get_room_availability(room_id: int, date: str) -> str:
+def get_room_availability(room_id: int, date: str) -> dict:
     """Get all bookings and free time slots for a room on a specific date. Date as YYYY-MM-DD."""
-    result = tool_funcs.get_room_availability(_get_repo(), room_id=room_id, date=date)
-    return json.dumps(result, default=str)
+    return tool_funcs.get_room_availability(_get_repo(), room_id=room_id, date=date)
 
 
 @mcp.tool()
@@ -86,28 +82,25 @@ def book_room(
     end_time: str,
     booked_by: str,
     title: str,
-) -> str:
+) -> dict:
     """Book a meeting room. Returns confirmation or conflict detail with alternatives hint. Date as YYYY-MM-DD, times as HH:MM."""
-    result = tool_funcs.book_room(
+    return tool_funcs.book_room(
         _get_repo(), room_id=room_id, date=date,
         start_time=start_time, end_time=end_time,
         booked_by=booked_by, title=title,
     )
-    return json.dumps(result, default=str)
 
 
 @mcp.tool()
-def cancel_booking(booking_id: int) -> str:
+def cancel_booking(booking_id: int) -> dict:
     """Cancel an existing booking by its ID."""
-    result = tool_funcs.cancel_booking(_get_repo(), booking_id=booking_id)
-    return json.dumps(result, default=str)
+    return tool_funcs.cancel_booking(_get_repo(), booking_id=booking_id)
 
 
 @mcp.tool()
-def my_bookings(booked_by: str, date: str | None = None) -> str:
+def my_bookings(booked_by: str, date: str | None = None) -> list[dict]:
     """List bookings for a specific person. Optionally filter by date (YYYY-MM-DD)."""
-    result = tool_funcs.my_bookings(_get_repo(), booked_by=booked_by, date=date)
-    return json.dumps(result, default=str)
+    return tool_funcs.my_bookings(_get_repo(), booked_by=booked_by, date=date)
 
 
 def main():
