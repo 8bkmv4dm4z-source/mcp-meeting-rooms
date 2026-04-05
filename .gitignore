@@ -9,3 +9,4 @@ meeting_rooms.db-shm
 meeting_rooms.db-wal
 .env
 .mcp.json
+interview-questions.md
