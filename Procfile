@@ -1,1 +1,1 @@
-web: pip install -e . -q && python scripts/seed.py --schema-only && python -m meeting_rooms.server
+web: PYTHONPATH=/app/src python scripts/seed.py --schema-only && PYTHONPATH=/app/src python -m meeting_rooms.server
