@@ -4,7 +4,7 @@ healthcheckPath = "/health"
 healthcheckTimeout = 60
 
 [environments.production.variables]
-MR_TRANSPORT = "streamable-http"
+MR_TRANSPORT = "sse"
 MR_HOST = "0.0.0.0"
 MR_DB_PATH = "/data/meeting_rooms.db"
 PYTHONUNBUFFERED = "1"

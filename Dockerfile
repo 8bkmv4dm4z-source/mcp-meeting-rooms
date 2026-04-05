@@ -12,7 +12,7 @@ COPY start.sh .
 
 RUN chmod +x start.sh
 
-ENV MR_TRANSPORT=streamable-http
+ENV MR_TRANSPORT=sse
 ENV MR_HOST=0.0.0.0
 ENV PORT=8000
 ENV MR_DB_PATH=/data/meeting_rooms.db
