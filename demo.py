@@ -62,8 +62,11 @@ def banner(title: str) -> None:
 
 async def call(session: ClientSession, tool: str, result_type: type[T], **kwargs: Any) -> T:
     """Call an MCP tool and return the parsed result cast to result_type."""
+    from mcp.types import TextContent
     raw = await session.call_tool(tool, arguments=kwargs)
-    parsed = json.loads(raw.content[0].text)
+    content = raw.content[0]
+    assert isinstance(content, TextContent), f"Expected TextContent, got {type(content)}"
+    parsed = json.loads(content.text)
     return parsed  # type: ignore[return-value]  — JSON structure matches T by convention
 
 
