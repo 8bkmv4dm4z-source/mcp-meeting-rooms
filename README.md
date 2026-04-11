@@ -75,27 +75,35 @@ https://web-production-e9fc5.up.railway.app/sse
 
 #### Claude Code (CLI)
 
-1. Navigate to any project directory where you want the MCP server available
-2. Create or edit `.mcp.json` in that directory:
-   ```bash
-   # From your project root
-   cat > .mcp.json << 'EOF'
-   {
-     "mcpServers": {
-       "meeting-rooms": {
-         "type": "sse",
-         "url": "https://web-production-e9fc5.up.railway.app/sse"
-       }
-     }
-   }
-   EOF
-   ```
-3. Start Claude Code:
-   ```bash
-   claude
-   ```
-4. Claude will auto-detect the MCP server. Ask:
-   > *"List all meeting rooms in the R&D Center"*
+**Option A — Global (available in every project):**
+
+```bash
+claude mcp add meeting-rooms --transport sse --url https://web-production-e9fc5.up.railway.app/sse --scope user
+```
+
+This writes to `~/.claude.json` so every Claude Code session can access the meeting rooms server.
+
+**Option B — Per-project (only in one directory):**
+
+Create or edit `.mcp.json` in the project root:
+```json
+{
+  "mcpServers": {
+    "meeting-rooms": {
+      "type": "sse",
+      "url": "https://web-production-e9fc5.up.railway.app/sse"
+    }
+  }
+}
+```
+
+Then start Claude Code:
+```bash
+claude
+```
+
+Claude will auto-detect the MCP server. Ask:
+> *"List all meeting rooms in the R&D Center"*
 
 **Verify it connected:** Inside Claude Code, type `/mcp` — you should see `meeting-rooms` listed with 6 tools.
 
